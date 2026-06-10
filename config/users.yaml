@@ -1,0 +1,23 @@
+# B站用户监控配置
+# uid:      B站用户ID（字符串类型，必填）
+# name:    显示名称（可选，仅用于日志展示）
+# keywords: 关键词列表（子串匹配，不分大小写；空列表 = 推送所有动态）
+
+users:
+  - uid: "288592887"
+    name: "谭乔"
+    keywords: ["交通安全", "普法"]
+
+  - uid: "280793434"
+    name: "共青团中央"
+    keywords: []
+
+  - uid: "360996402"
+    name: "测试用户1"
+    keywords: []
+
+  - uid: "688379639"
+    name: "测试用户2"
+    keywords: []
+
+request_interval: 2

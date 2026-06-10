@@ -1,0 +1,60 @@
+name: B站动态监控
+
+on:
+  schedule:
+    # 每30分钟执行一次（注：GitHub Actions高负载时可能延迟）
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      uid:
+        description: "指定检测单个用户（留空则检测全部）"
+        required: false
+        type: string
+      force:
+        description: "强制推送最新动态（忽略state.json中的latest_dynamic_id）"
+        required: false
+        type: boolean
+        default: false
+
+# 防止并发执行导致 state.json 冲突
+concurrency:
+  group: bili-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 拉取最新状态
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull origin ${{ github.ref_name }} --rebase || true
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 运行监控程序
+        env:
+          DINGTALK_TOKEN: ${{ secrets.DINGTALK_TOKEN }}
+          DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+        run: python -m bili_ding
+
+      - name: 提交状态变更
+        run: |
+          git add data/state.json
+          if git diff --staged --quiet; then
+            echo "状态无变更，跳过提交。"
+          else
+            git commit -m "chore: update state [skip ci]"
+            git push
+          fi
